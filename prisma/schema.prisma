@@ -1,0 +1,159 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EnumUserRoles {
+  CUSTOMER
+  ADMIN
+  MANAGER
+}
+
+enum EnumOrderStatus {
+  NEW
+  PENDING
+  PAID
+  SHIPPED
+  DONE
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userRole EnumUserRoles @default(CUSTOMER) @map("user_role")
+
+  email    String @unique
+  password String
+  name     String @default("Customer")
+  phone    String @default("")
+
+  favorites Product[]
+  orders    Order[]
+  reviews   Review[]
+
+  @@map("users")
+}
+
+model Product {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name        String   @unique
+  slug        String   @unique
+  description String
+  price       Int
+  images      String[]
+
+  category      Category?    @relation(fields: [categoryId], references: [id])
+  categoryId    Int?         @map("category_id")
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+  subcategoryId Int?
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?  @map("user_id")
+
+  reviews    Review[]
+  orderItems OrderItem[]
+
+  @@map("product")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String @unique
+  slug String @unique
+
+  subcategories Subcategory[]
+  products      Product[]
+
+  @@map("category")
+}
+
+model Subcategory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String @unique
+  slug String @unique
+
+  category   Category? @relation(fields: [categoryId], references: [id])
+  categoryId Int?      @map("category_id")
+
+  products Product[]
+
+  @@map("subcategory")
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  status EnumOrderStatus @default(PENDING)
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?  @map("user_id")
+
+  orderItems OrderItem[]
+
+  @@map("order")
+}
+
+model UnauthorizedOrder {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  status EnumOrderStatus @default(PENDING)
+
+  orderItems OrderItem[]
+
+  @@map("unathorized_order")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  quantity Int
+  price    Int
+
+  order   Order? @relation(fields: [orderId], references: [id])
+  orderId Int?   @map("order_id")
+
+  unauthorizedOrder   UnauthorizedOrder? @relation(fields: [unauthorizedOrderId], references: [id])
+  unauthorizedOrderId Int?               @map("unathorized_order_id")
+
+  product   Product? @relation(fields: [productId], references: [id])
+  productId Int?
+
+  @@map("order_item")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rating Int
+  text   String
+
+  product   Product? @relation(fields: [productId], references: [id])
+  productId Int?     @map("product_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?     @map("user_id")
+
+  @@map("review")
+}
