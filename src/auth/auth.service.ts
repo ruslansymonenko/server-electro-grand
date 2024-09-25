@@ -6,7 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthDto } from './dto/auth.dto';
+import { AuthAdminDto, AuthDto } from './dto/auth.dto';
 import { Response } from 'express';
 import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -19,6 +19,8 @@ import { verify } from 'argon2';
 interface IAuthService {
   login(dto: AuthDto): Promise<IAuthServiceResponse>;
   register(dto: AuthDto): Promise<IAuthServiceResponse>;
+  registerAdmin(dto: AuthAdminDto): Promise<IAuthServiceResponse>;
+  loginAdmin(dto: AuthAdminDto): Promise<IAuthServiceResponse>;
   getNewTokens(refreshToken: string): Promise<IAuthServiceResponse>;
   createTokens(userId: number): Promise<ITokens>;
   addRefreshTokenToResponse(res: Response, refreshToken: string): void;
@@ -83,6 +85,62 @@ export class AuthService implements IAuthService {
 
       return {
         user: this.returnUserFields(newUser),
+        ...tokens,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Authorization error: ${error.message}`,
+        error.message,
+      );
+    }
+  }
+
+  async registerAdmin(dto: AuthAdminDto): Promise<IAuthServiceResponse> {
+    try {
+      if (dto.secretKey !== process.env.SECRET_KEY) {
+        throw new BadRequestException('Invalid secret key');
+      }
+
+      const isUser = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
+
+      if (isUser) throw new BadRequestException('User already exists');
+
+      const newUser: User | null = await this.userService.createAdmin(dto);
+
+      if (!newUser) throw new BadGatewayException('User was not created, please try later');
+
+      const tokens: ITokens = await this.createTokens(newUser.id);
+
+      return {
+        user: this.returnUserFields(newUser),
+        ...tokens,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Authorization error: ${error.message}`,
+        error.message,
+      );
+    }
+  }
+
+  async loginAdmin(dto: AuthAdminDto): Promise<IAuthServiceResponse> {
+    try {
+      if (dto.secretKey !== process.env.SECRET_KEY) {
+        throw new BadRequestException('Invalid secret key');
+      }
+
+      const user = await this.validateUser(dto);
+
+      if (!user) throw new BadRequestException('Wrong data!');
+
+      const tokens: ITokens = await this.createTokens(user.id);
+
+      return {
+        user: this.returnUserFields(user),
         ...tokens,
       };
     } catch (error) {

@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { EnumUserRoles, User } from '@prisma/client';
 import { UserDto } from './dto/user.dto';
 import { hash } from 'argon2';
 import { PrismaService } from '../prisma.service';
@@ -12,6 +12,7 @@ import { UpdateUserDto } from './dto/user.dto';
 
 interface IUserService {
   create(dto: UserDto): Promise<User | null>;
+  createAdmin(dto: UserDto): Promise<User | null>;
   findById(userID: number): Promise<User | null>;
   findByEmail(userEmail: string): Promise<User | null>;
   update(userId: number, dto: UpdateUserDto): Promise<IUserReturnInfo | null>;
@@ -42,6 +43,32 @@ export class UserService implements IUserService {
         data: {
           email: dto.email,
           password: await hash(dto.password),
+        },
+      });
+
+      if (!user) return null;
+
+      return user;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+    }
+  }
+
+  async createAdmin(dto: UserDto): Promise<User | null> {
+    try {
+      const isUser = await this.prisma.user.findUnique({
+        where: {
+          email: dto.email,
+        },
+      });
+
+      if (isUser) throw new BadRequestException('User already exists');
+
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: await hash(dto.password),
+          userRole: EnumUserRoles.ADMIN,
         },
       });
 
