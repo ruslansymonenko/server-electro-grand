@@ -37,11 +37,15 @@ export class CategoryService implements ICategoryService {
 
   async getAll(searchParams?: any): Promise<Category[] | null> {
     try {
-      const tags = await this.prisma.category.findMany({});
+      const categories = await this.prisma.category.findMany({
+        include: {
+          subcategories: true,
+        },
+      });
 
-      if (!tags) throw new InternalServerErrorException('Categories was not found');
+      if (!categories) throw new InternalServerErrorException('Categories was not found');
 
-      return tags;
+      return categories;
     } catch (error) {
       throw new InternalServerErrorException('Failed to get categories', error.message);
     }
@@ -52,6 +56,9 @@ export class CategoryService implements ICategoryService {
       const category = await this.prisma.category.findUnique({
         where: {
           id: id,
+        },
+        include: {
+          subcategories: true,
         },
       });
 
@@ -68,6 +75,9 @@ export class CategoryService implements ICategoryService {
       const category = await this.prisma.category.findUnique({
         where: {
           slug: slug,
+        },
+        include: {
+          subcategories: true,
         },
       });
 
