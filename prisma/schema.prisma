@@ -118,19 +118,6 @@ model Order {
   @@map("order")
 }
 
-model UnauthorizedOrder {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  status EnumOrderStatus @default(PENDING)
-
-  orderItems OrderItem[]
-  payment    Payment[]
-
-  @@map("unathorized_order")
-}
-
 model Payment {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
@@ -145,9 +132,6 @@ model Payment {
   order   Order? @relation(fields: [orderId], references: [id])
   orderId Int?   @map("order_id")
 
-  unauthorizedOrder   UnauthorizedOrder? @relation(fields: [unauthorizedOrderId], references: [id])
-  unauthorizedOrderId Int?               @map("unauthorized_order_id")
-
   @@map("payment")
 }
 
@@ -161,9 +145,6 @@ model OrderItem {
 
   order   Order? @relation(fields: [orderId], references: [id])
   orderId Int?   @map("order_id")
-
-  unauthorizedOrder   UnauthorizedOrder? @relation(fields: [unauthorizedOrderId], references: [id])
-  unauthorizedOrderId Int?               @map("unathorized_order_id")
 
   product   Product? @relation(fields: [productId], references: [id])
   productId Int?     @map("product_id")
