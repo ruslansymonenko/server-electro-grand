@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CategoryService } from '../category/category.service';
 import { SubcategoryService } from '../subcategory/subcategory.service';
-import { Product } from '@prisma/client';
+import { Prisma, Product, Subcategory } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
@@ -16,14 +16,16 @@ import * as path from 'path';
 
 interface IProductService {
   create(dto: ProductDto): Promise<Product | null>;
+  setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
   getAll(searchParams?: any): Promise<Product[] | null>;
   getById(id: number): Promise<Product | null>;
   getBySlug(slug: string): Promise<Product | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
+  delete(id: number): Promise<Product | null>;
 }
 
 @Injectable()
-export class ProductService {
+export class ProductService implements IProductService {
   constructor(
     private prisma: PrismaService,
     private categoryService: CategoryService,
@@ -31,7 +33,7 @@ export class ProductService {
     private filesService: FilesService,
   ) {}
 
-  async create(dto: ProductDto, images: Express.Multer.File[]): Promise<Product | null> {
+  async create(dto: ProductDto): Promise<Product | null> {
     try {
       const isCategory = await this.categoryService.getById(dto.categoryId);
 
@@ -64,8 +66,6 @@ export class ProductService {
 
   async setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null> {
     try {
-      // if (images.length <= 0) throw new BadRequestException('Images not found');
-
       const currentProduct = await this.prisma.product.findUnique({
         where: { id: id },
         select: { images: true },
@@ -103,6 +103,138 @@ export class ProductService {
       return updatedProduct;
     } catch (error) {
       throw new InternalServerErrorException(error);
+    }
+  }
+
+  async getAll(searchParams?: any): Promise<Product[] | null> {
+    try {
+      const products = await this.prisma.product.findMany({
+        include: {
+          category: true,
+          subcategory: true,
+        },
+      });
+
+      if (!products) throw new InternalServerErrorException('Products was not found');
+
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to get products', error.message);
+    }
+  }
+
+  async getById(id: number): Promise<Product | null> {
+    try {
+      const product = await this.prisma.product.findUnique({
+        where: {
+          id: id,
+        },
+        include: {
+          category: true,
+          subcategory: true,
+        },
+      });
+
+      if (!product) throw new NotFoundException('Error getting product');
+
+      return product;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async getBySlug(slug: string): Promise<Product | null> {
+    try {
+      const product = await this.prisma.product.findUnique({
+        where: {
+          slug: slug,
+        },
+        include: {
+          category: true,
+          subcategory: true,
+        },
+      });
+
+      if (!product) throw new NotFoundException('Error getting product');
+
+      return product;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async update(id: number, dto: UpdateProductDto): Promise<Product | null> {
+    try {
+      const isProduct = await this.getById(id);
+
+      if (!isProduct) throw new BadRequestException('Product not found');
+
+      const updateData: Prisma.ProductUpdateInput = {};
+
+      if (dto.name !== undefined) {
+        updateData.name = dto.name;
+        updateData.slug = createSlug(dto.name);
+      }
+
+      if (dto.description !== undefined) {
+        updateData.description = dto.description;
+      }
+
+      if (dto.price !== undefined) {
+        updateData.price = dto.price;
+      }
+
+      if (dto.categoryId !== undefined) {
+        updateData.category = {
+          connect: { id: dto.categoryId },
+        };
+      }
+
+      if (dto.subcategoryId !== undefined) {
+        updateData.subcategory = {
+          connect: { id: dto.subcategoryId },
+        };
+      }
+
+      const updatedProduct = await this.prisma.product.update({
+        where: {
+          id: id,
+        },
+        data: updateData,
+      });
+
+      if (!updatedProduct)
+        throw new InternalServerErrorException('Error while updating' + ' product');
+
+      return updatedProduct;
+    } catch (error) {
+      throw new InternalServerErrorException(`Failed to update product: ${error}`);
+    }
+  }
+
+  async delete(id: number): Promise<Product | null> {
+    try {
+      const product = await this.prisma.product.delete({
+        where: {
+          id: id,
+        },
+      });
+
+      if (!product) throw new InternalServerErrorException('Error deleting product');
+
+      const oldImagesPaths = product.images;
+      if (oldImagesPaths.length > 0) {
+        await Promise.all(
+          oldImagesPaths.map(async (imagePath) => {
+            const fullPath = path.join(__dirname, '..', '..', imagePath);
+            await fs.unlink(fullPath);
+          }),
+        );
+      }
+
+      return product;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to delete product', error.message);
     }
   }
 }

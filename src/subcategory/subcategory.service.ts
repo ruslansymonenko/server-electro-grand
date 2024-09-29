@@ -16,6 +16,7 @@ interface ISubcategoryService {
   getById(id: number): Promise<Subcategory | null>;
   getBySlug(slug: string): Promise<Subcategory | null>;
   update(id: number, dto: UpdateSubcategoryDto): Promise<Subcategory | null>;
+  delete(id: number): Promise<Subcategory | null>;
 }
 
 @Injectable()
