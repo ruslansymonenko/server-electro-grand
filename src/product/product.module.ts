@@ -9,5 +9,6 @@ import { FilesService } from '../files/files.service';
 @Module({
   controllers: [ProductController],
   providers: [ProductService, PrismaService, CategoryService, SubcategoryService, FilesService],
+  exports: [ProductService],
 })
 export class ProductModule {}
