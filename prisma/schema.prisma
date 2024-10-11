@@ -62,6 +62,8 @@ model Product {
   categoryId    Int?         @map("category_id")
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
   subcategoryId Int?
+  brand         Brand?       @relation(fields: [brandId], references: [id])
+  brandId       Int?         @map("brand_id")
 
   user   User? @relation(fields: [userId], references: [id])
   userId Int?  @map("user_id")
@@ -70,6 +72,19 @@ model Product {
   orderItems OrderItem[]
 
   @@map("product")
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String @unique
+  slug String @unique
+
+  products Product[]
+
+  @@map("brand")
 }
 
 model Category {

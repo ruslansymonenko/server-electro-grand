@@ -18,7 +18,6 @@ import { Auth } from '../auth/decorators/auth.decorator';
 import { EnumUserRoles } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { UpdateSubcategoryDto } from '../subcategory/dto/subcategory.dto';
 
 @Controller('product')
 export class ProductController {
@@ -50,6 +49,12 @@ export class ProductController {
   @Get('by-id/:id')
   async getById(@Param('id') id: string) {
     return this.productService.getById(parseInt(id));
+  }
+
+  @HttpCode(200)
+  @Get('by-brand/:id')
+  async getByBrandId(@Param('id') id: string) {
+    return this.productService.getByBrand(parseInt(id));
   }
 
   @HttpCode(200)
