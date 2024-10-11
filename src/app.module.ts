@@ -12,6 +12,7 @@ import { OrderItemModule } from './order-item/order-item.module';
 import { ReviewModule } from './review/review.module';
 import { PaymentModule } from './payment/payment.module';
 import { FilesModule } from './files/files.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FilesModule } from './files/files.module';
     ReviewModule,
     PaymentModule,
     FilesModule,
+    BrandModule,
   ],
   controllers: [],
   providers: [],

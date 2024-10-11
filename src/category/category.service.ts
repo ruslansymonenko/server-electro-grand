@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CategoryDto, UpdateCategoryDto } from './dto/category.dto';
-import { Category, Prisma } from '@prisma/client';
+import { Brand, Category, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { createSlug } from '../utils/create-slug/create-slug';
 
@@ -10,6 +10,7 @@ interface ICategoryService {
   getById(id: number): Promise<Category | null>;
   getBySlug(slug: string): Promise<Category | null>;
   update(id: number, dto: UpdateCategoryDto): Promise<Category | null>;
+  delete(id: number): Promise<Category | null>;
 }
 
 @Injectable()
