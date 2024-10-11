@@ -62,7 +62,7 @@ model Product {
   categoryId    Int?         @map("category_id")
   subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
   subcategoryId Int?
-  brands        Brand?       @relation(fields: [brandId], references: [id])
+  brand         Brand?       @relation(fields: [brandId], references: [id])
   brandId       Int?         @map("brand_id")
 
   user   User? @relation(fields: [userId], references: [id])

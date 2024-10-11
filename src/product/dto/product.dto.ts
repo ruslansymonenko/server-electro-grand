@@ -18,6 +18,10 @@ export class ProductDto {
 
   @IsNumber({}, { message: 'Subcategory id is required and should be a number' })
   subcategoryId: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Brand id is required and should be a number' })
+  brandId: number;
 }
 
 export class UpdateProductDto {
@@ -42,4 +46,8 @@ export class UpdateProductDto {
   @IsOptional()
   @IsNumber({}, { message: 'Subcategory id is required and should be a number' })
   subcategoryId: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Brand id is required and should be a number' })
+  brandId: number;
 }

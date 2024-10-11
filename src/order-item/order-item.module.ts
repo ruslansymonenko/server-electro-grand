@@ -8,6 +8,7 @@ import { CategoryService } from '../category/category.service';
 import { SubcategoryService } from '../subcategory/subcategory.service';
 import { FilesService } from '../files/files.service';
 import { UserService } from '../user/user.service';
+import { BrandService } from '../brand/brand.service';
 
 @Module({
   controllers: [OrderItemController],
@@ -19,6 +20,7 @@ import { UserService } from '../user/user.service';
     CategoryService,
     SubcategoryService,
     FilesService,
+    BrandService,
     UserService,
   ],
 })
