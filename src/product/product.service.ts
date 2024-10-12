@@ -150,6 +150,46 @@ export class ProductService implements IProductService {
     }
   }
 
+  async getByCategory(categoryId: number): Promise<Product[] | null> {
+    try {
+      const products = await this.prisma.product.findMany({
+        where: {
+          categoryId: categoryId,
+        },
+        include: {
+          category: true,
+          subcategory: true,
+        },
+      });
+
+      if (!products) throw new NotFoundException('Error getting products');
+
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async getBySubcategory(subcategoryId: number): Promise<Product[] | null> {
+    try {
+      const products = await this.prisma.product.findMany({
+        where: {
+          subcategoryId: subcategoryId,
+        },
+        include: {
+          category: true,
+          subcategory: true,
+        },
+      });
+
+      if (!products) throw new NotFoundException('Error getting products');
+
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
   async getById(id: number): Promise<Product | null> {
     try {
       const product = await this.prisma.product.findUnique({

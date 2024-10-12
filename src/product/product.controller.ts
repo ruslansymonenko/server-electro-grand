@@ -58,6 +58,18 @@ export class ProductController {
   }
 
   @HttpCode(200)
+  @Get('by-category/:id')
+  async getByCategoryId(@Param('id') id: string) {
+    return this.productService.getByCategory(parseInt(id));
+  }
+
+  @HttpCode(200)
+  @Get('by-subcategory/:id')
+  async getBySubcategoryId(@Param('id') id: string) {
+    return this.productService.getBySubcategory(parseInt(id));
+  }
+
+  @HttpCode(200)
   @Get('by-slug/:slug')
   async getBySlug(@Param('slug') slug: string) {
     return this.productService.getBySlug(slug);
