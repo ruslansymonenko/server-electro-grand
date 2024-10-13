@@ -21,6 +21,8 @@ interface IProductService {
   getAll(searchParams?: any): Promise<Product[] | null>;
   getById(id: number): Promise<Product | null>;
   getByBrand(brandId: number): Promise<Product[] | null>;
+  getByCategory(categoryId: number): Promise<Product[] | null>;
+  getBySubcategory(subcategoryId: number): Promise<Product[] | null>;
   getBySlug(slug: string): Promise<Product | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
@@ -81,18 +83,11 @@ export class ProductService implements IProductService {
       if (!currentProduct) throw new NotFoundException('Product not found');
 
       const oldImagesPaths = currentProduct.images;
-      if (oldImagesPaths.length > 0) {
-        await Promise.all(
-          oldImagesPaths.map(async (imagePath) => {
-            const fullPath = path.join(__dirname, '..', '..', imagePath);
-            await fs.unlink(fullPath);
-          }),
-        );
-      }
 
       const filesData: IFileResponse[] = await this.filesService.saveFiles(
         images,
         EnumFoldersNames.PRODUCTS,
+        oldImagesPaths.length > 0 ? oldImagesPaths : null,
       );
       const imagesPaths: string[] = filesData.map((file) => file.url);
 
@@ -119,6 +114,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -139,6 +135,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -159,6 +156,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -179,6 +177,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -199,6 +198,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -219,6 +219,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 

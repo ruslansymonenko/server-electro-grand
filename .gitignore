@@ -4,7 +4,7 @@
 
 # server
 .env
-/uploads
+/public/uploads
 
 # Logs
 logs

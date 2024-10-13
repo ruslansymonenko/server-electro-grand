@@ -68,7 +68,7 @@ model Product {
   slug        String   @unique
   description String
   price       Int
-  images      String[]
+  images      String[] @default(["public/assets/images/product.png"])
 
   category      Category?    @relation(fields: [categoryId], references: [id])
   categoryId    Int?         @map("category_id")
@@ -89,8 +89,9 @@ model Brand {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name String @unique
-  slug String @unique
+  name  String @unique
+  slug  String @unique
+  image String @default("public/assets/images/brand.png")
 
   products Product[]
 
@@ -102,8 +103,9 @@ model Category {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name String @unique
-  slug String @unique
+  name  String @unique
+  slug  String @unique
+  image String @default("public/assets/images/category.png")
 
   subcategories Subcategory[]
   products      Product[]
@@ -116,8 +118,9 @@ model Subcategory {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  name String @unique
-  slug String @unique
+  name  String @unique
+  slug  String @unique
+  image String @default("public/assets/images/subcategory.png")
 
   category   Category? @relation(fields: [categoryId], references: [id])
   categoryId Int?      @map("category_id")

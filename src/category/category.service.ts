@@ -1,8 +1,11 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CategoryDto, UpdateCategoryDto } from './dto/category.dto';
-import { Brand, Category, Prisma } from '@prisma/client';
+import { Category, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { createSlug } from '../utils/create-slug/create-slug';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 
 interface ICategoryService {
   create(dto: CategoryDto): Promise<Category | null>;
@@ -15,7 +18,10 @@ interface ICategoryService {
 
 @Injectable()
 export class CategoryService implements ICategoryService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private filesService: FilesService,
+  ) {}
 
   async create(dto: CategoryDto): Promise<Category | null> {
     const categorySlug: string = createSlug(dto.name);
@@ -32,6 +38,44 @@ export class CategoryService implements ICategoryService {
 
       return category;
     } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async setCategoryImage(id: number, image: Express.Multer.File[]): Promise<Category | null> {
+    console.log('text1');
+    try {
+      const currentCategory = await this.prisma.category.findUnique({
+        where: { id: id },
+        select: { image: true },
+      });
+
+      if (!currentCategory) throw new NotFoundException('Category not found');
+
+      const oldImagePath: string = currentCategory.image;
+
+      const filesData: IFileResponse[] = await this.filesService.saveFiles(
+        [image[0]],
+        EnumFoldersNames.CATEGORIES,
+        [oldImagePath],
+      );
+      const imagesPath: string = filesData.map((file) => file.url)[0];
+
+      const updatedCategory = await this.prisma.category.update({
+        where: {
+          id: id,
+        },
+        data: {
+          image: imagesPath,
+        },
+      });
+
+      if (!updatedCategory)
+        throw new InternalServerErrorException('Error updating category' + ' images');
+
+      return updatedCategory;
+    } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(error);
     }
   }
