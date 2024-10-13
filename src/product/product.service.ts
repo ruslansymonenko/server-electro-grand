@@ -11,8 +11,6 @@ import { Prisma, Product, Subcategory } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { BrandService } from '../brand/brand.service';
 
 interface IProductService {
@@ -20,9 +18,9 @@ interface IProductService {
   setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
   getAll(searchParams?: any): Promise<Product[] | null>;
   getById(id: number): Promise<Product | null>;
-  getByBrand(brandId: number): Promise<Product[] | null>;
-  getByCategory(categoryId: number): Promise<Product[] | null>;
-  getBySubcategory(subcategoryId: number): Promise<Product[] | null>;
+  getByBrand(brandSlug: string): Promise<Product[] | null>;
+  getByCategory(categorySlug: string): Promise<Product[] | null>;
+  getBySubcategory(subcategorySlug: string): Promise<Product[] | null>;
   getBySlug(slug: string): Promise<Product | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
@@ -126,11 +124,13 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getByBrand(brandId: number): Promise<Product[] | null> {
+  async getByBrand(brandSlug: string): Promise<Product[] | null> {
     try {
       const products = await this.prisma.product.findMany({
         where: {
-          brandId: brandId,
+          brand: {
+            slug: brandSlug,
+          },
         },
         include: {
           category: true,
@@ -147,11 +147,13 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getByCategory(categoryId: number): Promise<Product[] | null> {
+  async getByCategory(categorySlug: string): Promise<Product[] | null> {
     try {
       const products = await this.prisma.product.findMany({
         where: {
-          categoryId: categoryId,
+          category: {
+            slug: categorySlug,
+          },
         },
         include: {
           category: true,
@@ -168,11 +170,13 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getBySubcategory(subcategoryId: number): Promise<Product[] | null> {
+  async getBySubcategory(subcategorySlug: string): Promise<Product[] | null> {
     try {
       const products = await this.prisma.product.findMany({
         where: {
-          subcategoryId: subcategoryId,
+          subcategory: {
+            slug: subcategorySlug,
+          },
         },
         include: {
           category: true,

@@ -52,21 +52,21 @@ export class ProductController {
   }
 
   @HttpCode(200)
-  @Get('by-brand/:id')
-  async getByBrandId(@Param('id') id: string) {
-    return this.productService.getByBrand(parseInt(id));
+  @Get('by-brand/:slug')
+  async getByBrandSlug(@Param('slug') slug: string) {
+    return this.productService.getByBrand(slug);
   }
 
   @HttpCode(200)
-  @Get('by-category/:id')
-  async getByCategoryId(@Param('id') id: string) {
-    return this.productService.getByCategory(parseInt(id));
+  @Get('by-category/:slug')
+  async getByCategorySlug(@Param('slug') slug: string) {
+    return this.productService.getByCategory(slug);
   }
 
   @HttpCode(200)
-  @Get('by-subcategory/:id')
-  async getBySubcategoryId(@Param('id') id: string) {
-    return this.productService.getBySubcategory(parseInt(id));
+  @Get('by-subcategory/:slug')
+  async getBySubcategorySlug(@Param('slug') slug: string) {
+    return this.productService.getBySubcategory(slug);
   }
 
   @HttpCode(200)
