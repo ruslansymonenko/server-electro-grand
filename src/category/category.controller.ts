@@ -36,7 +36,6 @@ export class CategoryController {
   @Auth(EnumUserRoles.ADMIN)
   @Put('set-image/:id')
   async setProductImages(@Param('id') id: string, @UploadedFiles() files: Express.Multer.File[]) {
-    console.log('text');
     return this.categoryService.setCategoryImage(parseInt(id), files);
   }
 

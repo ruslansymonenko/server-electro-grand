@@ -3,12 +3,11 @@ import { CategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import { Category, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma.service';
 import { createSlug } from '../utils/create-slug/create-slug';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 
 interface ICategoryService {
   create(dto: CategoryDto): Promise<Category | null>;
+  setCategoryImage(id: number, image: Express.Multer.File[]): Promise<Category | null>;
   getAll(searchParams?: any): Promise<Category[] | null>;
   getById(id: number): Promise<Category | null>;
   getBySlug(slug: string): Promise<Category | null>;
@@ -43,7 +42,6 @@ export class CategoryService implements ICategoryService {
   }
 
   async setCategoryImage(id: number, image: Express.Multer.File[]): Promise<Category | null> {
-    console.log('text1');
     try {
       const currentCategory = await this.prisma.category.findUnique({
         where: { id: id },
@@ -144,6 +142,7 @@ export class CategoryService implements ICategoryService {
 
       if (dto.name !== undefined) {
         updateData.name = dto.name;
+        updateData.slug = createSlug(dto.name);
       }
 
       if (dto.slug !== undefined) {

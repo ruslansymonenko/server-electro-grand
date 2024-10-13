@@ -23,6 +23,7 @@ export interface IFileResponse {
 
 export enum EnumFoldersNames {
   PRODUCTS = 'product',
+  BRANDS = 'brand',
   CATEGORIES = 'categories',
   SUBCATEGORIES = 'subcategories',
 }
