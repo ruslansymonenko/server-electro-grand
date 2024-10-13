@@ -172,6 +172,8 @@ export class CategoryService implements ICategoryService {
         },
       });
 
+      await this.filesService.removeOldImages([category.image]);
+
       if (!category) throw new InternalServerErrorException('Error deleting category');
 
       return category;

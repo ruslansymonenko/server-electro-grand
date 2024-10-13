@@ -298,12 +298,7 @@ export class ProductService implements IProductService {
 
       const oldImagesPaths = product.images;
       if (oldImagesPaths.length > 0) {
-        await Promise.all(
-          oldImagesPaths.map(async (imagePath) => {
-            const fullPath = path.join(__dirname, '..', '..', imagePath);
-            await fs.unlink(fullPath);
-          }),
-        );
+        await this.filesService.removeOldImages(oldImagesPaths);
       }
 
       return product;

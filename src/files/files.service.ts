@@ -5,6 +5,7 @@ import { path } from 'app-root-path';
 import * as nodePath from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs/promises';
+import { createSlug } from '../utils/create-slug/create-slug';
 
 export interface IFilesService {
   saveFiles(
@@ -93,11 +94,7 @@ export class FilesService implements IFilesService {
     const timestamp = Date.now();
     const uniqueId = uuidv4();
     const extension = originalName.split('.').pop();
-
-    const baseName = slugify(originalName.replace(`.${extension}`, ''), {
-      lower: true,
-      strict: true,
-    });
+    const baseName = createSlug(originalName.replace(`.${extension}`, ''));
 
     return `${baseName}-${timestamp}-${uniqueId}.${extension}`;
   }

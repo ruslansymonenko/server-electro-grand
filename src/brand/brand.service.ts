@@ -136,6 +136,7 @@ export class BrandService implements IBrandService {
 
       if (dto.name !== undefined) {
         updateData.name = dto.name;
+        updateData.slug = createSlug(dto.name);
       }
 
       if (dto.slug !== undefined) {
@@ -164,6 +165,8 @@ export class BrandService implements IBrandService {
           id: id,
         },
       });
+
+      await this.filesService.removeOldImages([brand.image]);
 
       if (!brand) throw new InternalServerErrorException('Error deleting brand');
 

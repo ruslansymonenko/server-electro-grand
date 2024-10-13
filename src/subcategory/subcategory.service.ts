@@ -148,6 +148,7 @@ export class SubcategoryService implements ISubcategoryService {
 
       if (dto.name !== undefined) {
         updateData.name = dto.name;
+        updateData.slug = createSlug(dto.name);
       }
 
       if (dto.slug !== undefined) {
@@ -183,6 +184,8 @@ export class SubcategoryService implements ISubcategoryService {
           id: id,
         },
       });
+
+      await this.filesService.removeOldImages([subcategory.image]);
 
       if (!subcategory) throw new InternalServerErrorException('Error deleting subcategory');
 

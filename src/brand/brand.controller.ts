@@ -8,6 +8,8 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -15,6 +17,7 @@ import { BrandService } from './brand.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { EnumUserRoles } from '@prisma/client';
 import { BrandDto, UpdateBrandDto } from './dto/brand.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('brand')
 export class BrandController {
@@ -26,6 +29,14 @@ export class BrandController {
   @Post('')
   async create(@Body() dto: BrandDto) {
     return this.brandService.create(dto);
+  }
+
+  @UseInterceptors(FilesInterceptor('files'))
+  @HttpCode(200)
+  @Auth(EnumUserRoles.ADMIN)
+  @Put('set-image/:id')
+  async setProductImages(@Param('id') id: string, @UploadedFiles() files: Express.Multer.File[]) {
+    return this.brandService.setBrandImage(parseInt(id), files);
   }
 
   @HttpCode(200)
