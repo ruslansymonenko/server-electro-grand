@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -23,6 +25,7 @@ export class OrderItemService implements IOrderItemService {
   constructor(
     private prisma: PrismaService,
     private productService: ProductService,
+    @Inject(forwardRef(() => OrderService))
     private orderService: OrderService,
   ) {}
 
@@ -40,7 +43,7 @@ export class OrderItemService implements IOrderItemService {
         data: {
           orderId: dto.orderId,
           quantity: dto.quantity,
-          price: dto.price,
+          price: isProduct.price,
           productId: dto.productId,
         },
       });

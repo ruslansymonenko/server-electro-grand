@@ -9,8 +9,10 @@ import { SubcategoryService } from '../subcategory/subcategory.service';
 import { FilesService } from '../files/files.service';
 import { UserService } from '../user/user.service';
 import { BrandService } from '../brand/brand.service';
+import { OrderModule } from '../order/order.module';
 
 @Module({
+  imports: [OrderModule],
   controllers: [OrderItemController],
   providers: [
     OrderItemService,

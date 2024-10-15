@@ -27,6 +27,11 @@ enum EnumPaymentStatus {
   FAILED
 }
 
+enum EnumDeliveryType {
+  NOVA_POST
+  UKR_POST
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now()) @map("created_at")
@@ -135,7 +140,12 @@ model Order {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  status EnumOrderStatus @default(PENDING)
+  status          EnumOrderStatus  @default(PENDING)
+  customerEmail   String           @map("customer_email")
+  customerPhone   String           @map("customer_phone")
+  deliveryType    EnumDeliveryType @map("delivery_type")
+  deliveryAddress String           @map("delivery_address")
+  comments        String           @default("")
 
   user   User? @relation(fields: [userId], references: [id])
   userId Int?  @map("user_id")

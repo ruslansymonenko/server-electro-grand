@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,6 +11,7 @@ import { PrismaService } from '../prisma.service';
 import { UserService } from '../user/user.service';
 import { OrderDto, UpdateOrderDto } from './dto/order.dto';
 import { ProductService } from '../product/product.service';
+import { OrderItemService } from '../order-item/order-item.service';
 
 interface IOrderService {
   create(dto: OrderDto): Promise<Order | null>;
@@ -25,6 +28,8 @@ export class OrderService implements IOrderService {
     private prisma: PrismaService,
     private userService: UserService,
     private productService: ProductService,
+    @Inject(forwardRef(() => OrderItemService))
+    private orderItemService: OrderItemService,
   ) {}
 
   async create(dto: OrderDto): Promise<Order | null> {
@@ -44,17 +49,26 @@ export class OrderService implements IOrderService {
 
       const order = await this.prisma.order.create({
         data: {
-          userId: dto.userId ? dto.userId : null,
-          status: dto.status ? dto.status : EnumOrderStatus.NEW,
-          orderItems: {
-            create: dto.orderItems.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
+          userId: dto.userId,
+          status: dto.status || EnumOrderStatus.NEW,
+          customerEmail: dto.customerEmail,
+          customerPhone: dto.customerPhone,
+          deliveryType: dto.deliveryType,
+          deliveryAddress: dto.deliveryAddress,
         },
       });
+
+      if (order && dto.orderItems.length > 0) {
+        const orderItems = dto.orderItems.map(async (item) => {
+          const orderItem = await this.orderItemService.create({
+            orderId: order.id,
+            productId: item.productId,
+            quantity: item.quantity,
+          });
+
+          if (!orderItems) throw new InternalServerErrorException('Error creating order items');
+        });
+      }
 
       if (!order) throw new InternalServerErrorException('Error creating order');
 
@@ -74,6 +88,7 @@ export class OrderService implements IOrderService {
           orderItems: {
             include: { product: true },
           },
+          payment: true,
         },
       });
 
@@ -92,6 +107,7 @@ export class OrderService implements IOrderService {
           orderItems: {
             include: { product: true },
           },
+          payment: true,
         },
       });
 
@@ -113,6 +129,7 @@ export class OrderService implements IOrderService {
           orderItems: {
             include: { product: true },
           },
+          payment: true,
         },
       });
 
