@@ -11,8 +11,6 @@ import { Prisma, Product, Subcategory } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
-import * as fs from 'fs/promises';
-import * as path from 'path';
 import { BrandService } from '../brand/brand.service';
 
 interface IProductService {
@@ -20,7 +18,9 @@ interface IProductService {
   setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
   getAll(searchParams?: any): Promise<Product[] | null>;
   getById(id: number): Promise<Product | null>;
-  getByBrand(brandId: number): Promise<Product[] | null>;
+  getByBrand(brandSlug: string): Promise<Product[] | null>;
+  getByCategory(categorySlug: string): Promise<Product[] | null>;
+  getBySubcategory(subcategorySlug: string): Promise<Product[] | null>;
   getBySlug(slug: string): Promise<Product | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
@@ -81,18 +81,11 @@ export class ProductService implements IProductService {
       if (!currentProduct) throw new NotFoundException('Product not found');
 
       const oldImagesPaths = currentProduct.images;
-      if (oldImagesPaths.length > 0) {
-        await Promise.all(
-          oldImagesPaths.map(async (imagePath) => {
-            const fullPath = path.join(__dirname, '..', '..', imagePath);
-            await fs.unlink(fullPath);
-          }),
-        );
-      }
 
       const filesData: IFileResponse[] = await this.filesService.saveFiles(
         images,
         EnumFoldersNames.PRODUCTS,
+        oldImagesPaths.length > 0 ? oldImagesPaths : null,
       );
       const imagesPaths: string[] = filesData.map((file) => file.url);
 
@@ -119,6 +112,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -130,15 +124,64 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getByBrand(brandId: number): Promise<Product[] | null> {
+  async getByBrand(brandSlug: string): Promise<Product[] | null> {
     try {
       const products = await this.prisma.product.findMany({
         where: {
-          brandId: brandId,
+          brand: {
+            slug: brandSlug,
+          },
         },
         include: {
           category: true,
           subcategory: true,
+          brand: true,
+        },
+      });
+
+      if (!products) throw new NotFoundException('Error getting products');
+
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async getByCategory(categorySlug: string): Promise<Product[] | null> {
+    try {
+      const products = await this.prisma.product.findMany({
+        where: {
+          category: {
+            slug: categorySlug,
+          },
+        },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+        },
+      });
+
+      if (!products) throw new NotFoundException('Error getting products');
+
+      return products;
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async getBySubcategory(subcategorySlug: string): Promise<Product[] | null> {
+    try {
+      const products = await this.prisma.product.findMany({
+        where: {
+          subcategory: {
+            slug: subcategorySlug,
+          },
+        },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
         },
       });
 
@@ -159,6 +202,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -179,6 +223,7 @@ export class ProductService implements IProductService {
         include: {
           category: true,
           subcategory: true,
+          brand: true,
         },
       });
 
@@ -257,12 +302,7 @@ export class ProductService implements IProductService {
 
       const oldImagesPaths = product.images;
       if (oldImagesPaths.length > 0) {
-        await Promise.all(
-          oldImagesPaths.map(async (imagePath) => {
-            const fullPath = path.join(__dirname, '..', '..', imagePath);
-            await fs.unlink(fullPath);
-          }),
-        );
+        await this.filesService.removeOldImages(oldImagesPaths);
       }
 
       return product;

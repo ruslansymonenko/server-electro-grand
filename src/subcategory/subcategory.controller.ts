@@ -8,6 +8,8 @@ import {
   Post,
   Put,
   Query,
+  UploadedFiles,
+  UseInterceptors,
   UsePipes,
   ValidationPipe,
 } from '@nestjs/common';
@@ -15,6 +17,7 @@ import { SubcategoryService } from './subcategory.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { EnumUserRoles } from '@prisma/client';
 import { SubcategoryDto, UpdateSubcategoryDto } from './dto/subcategory.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('subcategory')
 export class SubcategoryController {
@@ -26,6 +29,15 @@ export class SubcategoryController {
   @Post('')
   async create(@Body() dto: SubcategoryDto) {
     return this.subcategoryService.create(dto);
+  }
+
+  @UseInterceptors(FilesInterceptor('files'))
+  @HttpCode(200)
+  @Auth(EnumUserRoles.ADMIN)
+  @Put('set-image/:id')
+  async setProductImages(@Param('id') id: string, @UploadedFiles() files: Express.Multer.File[]) {
+    console.log('text');
+    return this.subcategoryService.setSubcategoryImage(parseInt(id), files);
   }
 
   @HttpCode(200)

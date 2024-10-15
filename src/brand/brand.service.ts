@@ -3,6 +3,7 @@ import { Brand, Category, Prisma } from '@prisma/client';
 import { BrandDto, UpdateBrandDto } from './dto/brand.dto';
 import { PrismaService } from '../prisma.service';
 import { createSlug } from '../utils/create-slug/create-slug';
+import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 
 interface IBrandService {
   create(dto: BrandDto): Promise<Brand | null>;
@@ -15,7 +16,10 @@ interface IBrandService {
 
 @Injectable()
 export class BrandService implements IBrandService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private filesService: FilesService,
+  ) {}
 
   async create(dto: BrandDto): Promise<Brand | null> {
     const brandSlug: string = createSlug(dto.name);
@@ -32,6 +36,42 @@ export class BrandService implements IBrandService {
 
       return brand;
     } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
+  }
+
+  async setBrandImage(id: number, image: Express.Multer.File[]): Promise<Category | null> {
+    try {
+      const currentBrand = await this.prisma.brand.findUnique({
+        where: { id: id },
+        select: { image: true },
+      });
+
+      if (!currentBrand) throw new NotFoundException('Category not found');
+
+      const oldImagePath: string = currentBrand.image;
+
+      const filesData: IFileResponse[] = await this.filesService.saveFiles(
+        [image[0]],
+        EnumFoldersNames.BRANDS,
+        [oldImagePath],
+      );
+      const imagesPath: string = filesData.map((file) => file.url)[0];
+
+      const updatedBrand = await this.prisma.brand.update({
+        where: {
+          id: id,
+        },
+        data: {
+          image: imagesPath,
+        },
+      });
+
+      if (!updatedBrand) throw new InternalServerErrorException('Error updating brand' + ' images');
+
+      return updatedBrand;
+    } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(error);
     }
   }
@@ -96,6 +136,7 @@ export class BrandService implements IBrandService {
 
       if (dto.name !== undefined) {
         updateData.name = dto.name;
+        updateData.slug = createSlug(dto.name);
       }
 
       if (dto.slug !== undefined) {
@@ -124,6 +165,8 @@ export class BrandService implements IBrandService {
           id: id,
         },
       });
+
+      await this.filesService.removeOldImages([brand.image]);
 
       if (!brand) throw new InternalServerErrorException('Error deleting brand');
 
