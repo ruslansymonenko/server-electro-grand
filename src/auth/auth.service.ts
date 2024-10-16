@@ -12,9 +12,10 @@ import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ITokens } from '../types/auth.types';
 import { IUserReturnInfo, UserService } from '../user/user.service';
-import { User } from '@prisma/client';
+import { EnumUserRoles, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { verify } from 'argon2';
+import { sign } from 'jsonwebtoken';
 
 interface IAuthService {
   login(dto: AuthDto): Promise<IAuthServiceResponse>;
@@ -33,6 +34,7 @@ export interface IAuthServiceResponse {
   user: IUserReturnInfo;
   accessToken: string;
   refreshToken: string;
+  staffInfo?: any;
 }
 
 @Injectable()
@@ -114,10 +116,14 @@ export class AuthService implements IAuthService {
       if (!newUser) throw new BadGatewayException('User was not created, please try later');
 
       const tokens: ITokens = await this.createTokens(newUser.id);
+      const adminToken = this.createAdminToken(newUser.id, newUser.userRole);
 
       return {
         user: this.returnUserFields(newUser),
         ...tokens,
+        staffInfo: {
+          adminToken: adminToken,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -138,10 +144,14 @@ export class AuthService implements IAuthService {
       if (!user) throw new BadRequestException('Wrong data!');
 
       const tokens: ITokens = await this.createTokens(user.id);
+      const adminToken = this.createAdminToken(user.id, user.userRole);
 
       return {
         user: this.returnUserFields(user),
         ...tokens,
+        staffInfo: {
+          adminToken: adminToken,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -248,5 +258,11 @@ export class AuthService implements IAuthService {
       name: user.name,
       createdAt: user.createdAt,
     };
+  }
+
+  createAdminToken(userId: number, userRole: EnumUserRoles): string {
+    const payload = { id: userId, userRole: userRole };
+    const options = { expiresIn: '1h' };
+    return sign(payload, process.env.SECRET_ADMIN_KEY_CLIENT, options);
   }
 }
