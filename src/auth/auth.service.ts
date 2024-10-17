@@ -41,6 +41,7 @@ export interface IAuthServiceResponse {
 export class AuthService implements IAuthService {
   EXPIRE_DAY_REFRESH_TOKEN = 1;
   REFRESH_TOKEN_NAME = 'refreshToken';
+  ADMIN_TOKEN_NAME = 'adminToken';
 
   constructor(
     private prisma: PrismaService,
@@ -222,6 +223,32 @@ export class AuthService implements IAuthService {
 
   removeRefreshTokenFromResponse(res: Response): void {
     res.cookie(this.REFRESH_TOKEN_NAME, '', {
+      httpOnly: true,
+      domain: this.configService.get('SERVER_DOMAIN'),
+      expires: new Date(0),
+      secure: true,
+      //lax if production
+      sameSite: 'none',
+    });
+  }
+
+  addAdminTokenToResponse(res: Response, adminToken: string): void {
+    const expiresIn: Date = new Date();
+
+    expiresIn.setDate(expiresIn.getDate() + this.EXPIRE_DAY_REFRESH_TOKEN);
+
+    res.cookie(this.ADMIN_TOKEN_NAME, adminToken, {
+      httpOnly: true,
+      domain: this.configService.get('SERVER_DOMAIN'),
+      expires: expiresIn,
+      secure: true,
+      //lax if production
+      sameSite: 'none',
+    });
+  }
+
+  removeAdminTokenFromResponse(res: Response): void {
+    res.cookie(this.ADMIN_TOKEN_NAME, '', {
       httpOnly: true,
       domain: this.configService.get('SERVER_DOMAIN'),
       expires: new Date(0),
