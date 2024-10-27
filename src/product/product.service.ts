@@ -203,6 +203,15 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -224,6 +233,15 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
         },
       });
 

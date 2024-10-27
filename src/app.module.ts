@@ -13,6 +13,9 @@ import { ReviewModule } from './review/review.module';
 import { PaymentModule } from './payment/payment.module';
 import { FilesModule } from './files/files.module';
 import { BrandModule } from './brand/brand.module';
+import { AttributeModule } from './attribute/attribute.module';
+import { AttributeValueModule } from './attribute-value/attribute-value.module';
+import { ProductAttributeModule } from './product-attribute/product-attribute.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { BrandModule } from './brand/brand.module';
     PaymentModule,
     FilesModule,
     BrandModule,
+    AttributeModule,
+    AttributeValueModule,
+    ProductAttributeModule,
   ],
   controllers: [],
   providers: [],

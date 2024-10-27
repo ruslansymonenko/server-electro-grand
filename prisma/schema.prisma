@@ -84,9 +84,50 @@ model Product {
 
   reviews             Review[]
   orderItems          OrderItem[]
-  UserFavoriteProduct UserFavoriteProducts[]
+  userFavoriteProduct UserFavoriteProducts[]
+  productAttribute    ProductAttribute[]
 
   @@map("product")
+}
+
+model Attribute {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name String
+
+  values AttributeValue[]
+
+  @@map("attribute")
+}
+
+model AttributeValue {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  value String
+
+  productAttribute ProductAttribute[]
+
+  attribute   Attribute? @relation(fields: [attributeId], references: [id])
+  attributeId Int?       @map("attribute_id")
+
+  @@map("attribute_value")
+}
+
+model ProductAttribute {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  product          Product        @relation(fields: [productId], references: [id])
+  productId        Int            @map("product_id")
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id])
+  attributeValueId Int            @map("attribute_value_id")
+
+  @@map("product_attribute")
 }
 
 model Brand {
