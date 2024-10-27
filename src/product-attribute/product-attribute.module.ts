@@ -1,29 +1,27 @@
 import { Module } from '@nestjs/common';
-import { OrderItemService } from './order-item.service';
-import { OrderItemController } from './order-item.controller';
+import { ProductAttributeService } from './product-attribute.service';
+import { ProductAttributeController } from './product-attribute.controller';
 import { PrismaService } from '../prisma.service';
 import { ProductService } from '../product/product.service';
-import { OrderService } from '../order/order.service';
+import { AttributeValueService } from '../attribute-value/attribute-value.service';
 import { CategoryService } from '../category/category.service';
 import { SubcategoryService } from '../subcategory/subcategory.service';
 import { FilesService } from '../files/files.service';
-import { UserService } from '../user/user.service';
 import { BrandService } from '../brand/brand.service';
-import { OrderModule } from '../order/order.module';
+import { AttributeService } from '../attribute/attribute.service';
 
 @Module({
-  imports: [OrderModule],
-  controllers: [OrderItemController],
+  controllers: [ProductAttributeController],
   providers: [
-    OrderItemService,
+    ProductAttributeService,
     PrismaService,
     ProductService,
-    OrderService,
+    AttributeValueService,
     CategoryService,
     SubcategoryService,
     FilesService,
     BrandService,
-    UserService,
+    AttributeService,
   ],
 })
-export class OrderItemModule {}
+export class ProductAttributeModule {}

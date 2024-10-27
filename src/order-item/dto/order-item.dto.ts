@@ -1,5 +1,13 @@
 import { IsNumber, IsOptional } from 'class-validator';
 
+export class TypeOrderItem {
+  @IsNumber({}, { message: 'Product id should be a number' })
+  productId: number;
+
+  @IsNumber({}, { message: 'Quantity should be a number' })
+  quantity: number;
+}
+
 export class OrderItemDto {
   @IsOptional()
   @IsNumber({}, { message: 'Order id should be a number' })
@@ -7,9 +15,6 @@ export class OrderItemDto {
 
   @IsNumber({}, { message: 'Quantity should be a number' })
   quantity: number;
-
-  @IsNumber({}, { message: 'Price should be a number' })
-  price: number;
 
   @IsNumber({}, { message: 'Product ID should be a number' })
   productId: number;

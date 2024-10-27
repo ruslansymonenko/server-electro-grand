@@ -54,9 +54,10 @@ export class AuthController {
   @HttpCode(200)
   @Post('login-admin')
   async loginAdmin(@Body() dto: AuthAdminDto, @Res({ passthrough: true }) res: Response) {
-    const { refreshToken, ...response } = await this.authService.loginAdmin(dto);
+    const { refreshToken, staffInfo, ...response } = await this.authService.loginAdmin(dto);
 
     this.authService.addRefreshTokenToResponse(res, refreshToken);
+    this.authService.addAdminTokenToResponse(res, staffInfo.adminToken);
 
     return response;
   }
@@ -88,6 +89,7 @@ export class AuthController {
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
     this.authService.removeRefreshTokenFromResponse(res);
+    this.authService.removeAdminTokenFromResponse(res);
 
     return true;
   }

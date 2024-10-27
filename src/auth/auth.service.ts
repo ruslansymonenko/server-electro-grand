@@ -12,9 +12,10 @@ import { PrismaService } from '../prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ITokens } from '../types/auth.types';
 import { IUserReturnInfo, UserService } from '../user/user.service';
-import { User } from '@prisma/client';
+import { EnumUserRoles, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { verify } from 'argon2';
+import { sign } from 'jsonwebtoken';
 
 interface IAuthService {
   login(dto: AuthDto): Promise<IAuthServiceResponse>;
@@ -33,12 +34,14 @@ export interface IAuthServiceResponse {
   user: IUserReturnInfo;
   accessToken: string;
   refreshToken: string;
+  staffInfo?: any;
 }
 
 @Injectable()
 export class AuthService implements IAuthService {
   EXPIRE_DAY_REFRESH_TOKEN = 1;
   REFRESH_TOKEN_NAME = 'refreshToken';
+  ADMIN_TOKEN_NAME = 'adminToken';
 
   constructor(
     private prisma: PrismaService,
@@ -114,10 +117,14 @@ export class AuthService implements IAuthService {
       if (!newUser) throw new BadGatewayException('User was not created, please try later');
 
       const tokens: ITokens = await this.createTokens(newUser.id);
+      const adminToken = this.createAdminToken(newUser.id, newUser.userRole);
 
       return {
         user: this.returnUserFields(newUser),
         ...tokens,
+        staffInfo: {
+          adminToken: adminToken,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -138,10 +145,14 @@ export class AuthService implements IAuthService {
       if (!user) throw new BadRequestException('Wrong data!');
 
       const tokens: ITokens = await this.createTokens(user.id);
+      const adminToken = this.createAdminToken(user.id, user.userRole);
 
       return {
         user: this.returnUserFields(user),
         ...tokens,
+        staffInfo: {
+          adminToken: adminToken,
+        },
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -221,6 +232,32 @@ export class AuthService implements IAuthService {
     });
   }
 
+  addAdminTokenToResponse(res: Response, adminToken: string): void {
+    const expiresIn: Date = new Date();
+
+    expiresIn.setDate(expiresIn.getDate() + this.EXPIRE_DAY_REFRESH_TOKEN);
+
+    res.cookie(this.ADMIN_TOKEN_NAME, adminToken, {
+      httpOnly: true,
+      domain: this.configService.get('SERVER_DOMAIN'),
+      expires: expiresIn,
+      secure: true,
+      //lax if production
+      sameSite: 'none',
+    });
+  }
+
+  removeAdminTokenFromResponse(res: Response): void {
+    res.cookie(this.ADMIN_TOKEN_NAME, '', {
+      httpOnly: true,
+      domain: this.configService.get('SERVER_DOMAIN'),
+      expires: new Date(0),
+      secure: true,
+      //lax if production
+      sameSite: 'none',
+    });
+  }
+
   async validateUser(dto: AuthDto): Promise<User | null> {
     try {
       const user = await this.prisma.user.findUnique({
@@ -248,5 +285,11 @@ export class AuthService implements IAuthService {
       name: user.name,
       createdAt: user.createdAt,
     };
+  }
+
+  createAdminToken(userId: number, userRole: EnumUserRoles): string {
+    const payload = { id: userId, userRole: userRole };
+    const options = { expiresIn: '1h' };
+    return sign(payload, process.env.SECRET_ADMIN_KEY_CLIENT, options);
   }
 }

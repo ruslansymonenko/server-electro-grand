@@ -8,6 +8,7 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const PORT: number = process.env.PORT ? parseInt(process.env.PORT) : 4200;
+  const publicPath: string = join(process.cwd(), 'public');
 
   app.setGlobalPrefix('api');
   app.enableCors({
@@ -15,7 +16,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true,
   });
-  app.useStaticAssets(join(__dirname, '..', 'public'), {
+  app.useStaticAssets(join(publicPath), {
     prefix: '/public',
   });
   app.use(cookieParser());
