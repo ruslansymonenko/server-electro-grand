@@ -26,6 +26,10 @@ interface IProductService {
   delete(id: number): Promise<Product | null>;
 }
 
+export interface IProductWithSimilar extends Product {
+  similarProducts: Product[];
+}
+
 @Injectable()
 export class ProductService implements IProductService {
   constructor(
@@ -108,7 +112,10 @@ export class ProductService implements IProductService {
 
   async getAll(searchParams?: any): Promise<Product[] | null> {
     try {
+      const filters = this.getFiltersObject(searchParams);
+
       const products = await this.prisma.product.findMany({
+        where: filters,
         include: {
           category: true,
           subcategory: true,
@@ -193,7 +200,7 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getById(id: number): Promise<Product | null> {
+  async getById(id: number): Promise<IProductWithSimilar | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -217,13 +224,30 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      return product;
+      const similarProducts = await this.getSimilarProducts(product.subcategoryId, product.id);
+
+      return { ...product, similarProducts };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getBySlug(slug: string): Promise<Product | null> {
+  async getSimilarProducts(subcategoryId: number, excludeProductId: number): Promise<Product[]> {
+    const products = await this.prisma.product.findMany({
+      where: {
+        subcategoryId,
+        id: { not: excludeProductId },
+      },
+      take: 3,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return products;
+  }
+
+  async getBySlug(slug: string): Promise<IProductWithSimilar | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -247,7 +271,9 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      return product;
+      const similarProducts = await this.getSimilarProducts(product.subcategoryId, product.id);
+
+      return { ...product, similarProducts };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -306,6 +332,28 @@ export class ProductService implements IProductService {
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update product: ${error}`);
     }
+  }
+
+  getFiltersObject(searchParams: any) {
+    const filters: any = {};
+
+    if (searchParams.minPrice) {
+      filters.price = { gte: Number(searchParams.minPrice) };
+    }
+    if (searchParams.maxPrice) {
+      filters.price = { ...filters.price, lte: Number(searchParams.maxPrice) };
+    }
+    if (searchParams.category) {
+      filters.category = { name: searchParams.category };
+    }
+    if (searchParams.subcategory) {
+      filters.subcategory = { name: searchParams.subcategory };
+    }
+    if (searchParams.brand) {
+      filters.brand = { name: searchParams.brand };
+    }
+
+    return filters;
   }
 
   async delete(id: number): Promise<Product | null> {
