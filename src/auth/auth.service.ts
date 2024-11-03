@@ -289,7 +289,7 @@ export class AuthService implements IAuthService {
 
   createAdminToken(userId: number, userRole: EnumUserRoles): string {
     const payload = { id: userId, userRole: userRole };
-    const options = { expiresIn: '1h' };
+    const options = { expiresIn: '3h' };
     return sign(payload, process.env.SECRET_ADMIN_KEY_CLIENT, options);
   }
 }

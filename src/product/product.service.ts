@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CategoryService } from '../category/category.service';
 import { SubcategoryService } from '../subcategory/subcategory.service';
-import { Prisma, Product, Subcategory } from '@prisma/client';
+import { Prisma, Product } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
@@ -16,11 +16,11 @@ import { BrandService } from '../brand/brand.service';
 interface IProductService {
   create(dto: ProductDto): Promise<Product | null>;
   setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
-  getAll(searchParams?: any): Promise<Product[] | null>;
+  getAll(searchParams?: any): Promise<IProductServiceResponse | null>;
   getById(id: number): Promise<Product | null>;
-  getByBrand(brandSlug: string): Promise<Product[] | null>;
-  getByCategory(categorySlug: string): Promise<Product[] | null>;
-  getBySubcategory(subcategorySlug: string): Promise<Product[] | null>;
+  getByBrand(brandSlug: string): Promise<IProductServiceResponse | null>;
+  getByCategory(categorySlug: string): Promise<IProductServiceResponse | null>;
+  getBySubcategory(subcategorySlug: string): Promise<IProductServiceResponse | null>;
   getBySlug(slug: string): Promise<Product | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
@@ -28,6 +28,13 @@ interface IProductService {
 
 export interface IProductWithSimilar extends Product {
   similarProducts: Product[];
+}
+
+export interface IProductServiceResponse {
+  products: Product[];
+  totalProducts: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 @Injectable()
@@ -51,6 +58,17 @@ export class ProductService implements IProductService {
       if (dto.brandId) {
         const isBrand = await this.brandService.getById(dto.brandId);
         if (!isBrand) throw new BadRequestException('BrandId not found');
+      }
+
+      if (dto.categoryId && dto.subcategoryId) {
+        const isSubcategoryInCategory: boolean =
+          await this.subcategoryService.checkSubcategoryInCategory(
+            dto.subcategoryId,
+            dto.categoryId,
+          );
+
+        if (!isSubcategoryInCategory)
+          throw new BadRequestException('Subcategory is not linked' + ' with category');
       }
 
       const productSlug: string = createSlug(dto.name);
@@ -114,6 +132,11 @@ export class ProductService implements IProductService {
         data: {
           images: imagesPaths,
         },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+        },
       });
 
       if (!updatedProduct) throw new InternalServerErrorException('Error updating product images');
@@ -124,9 +147,12 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getAll(searchParams?: any): Promise<Product[] | null> {
+  async getAll(searchParams?: any): Promise<IProductServiceResponse | null> {
+    console.log(searchParams);
     try {
       const filters = this.getFiltersObject(searchParams);
+
+      const { skip, take, page, pageSize } = this.getPagination(searchParams);
 
       const products = await this.prisma.product.findMany({
         where: filters,
@@ -135,18 +161,29 @@ export class ProductService implements IProductService {
           subcategory: true,
           brand: true,
         },
+        skip,
+        take,
       });
+
+      const totalProducts: number = await this.prisma.product.count({ where: filters });
 
       if (!products) throw new InternalServerErrorException('Products was not found');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / pageSize),
+        currentPage: page,
+      };
     } catch (error) {
       throw new InternalServerErrorException('Failed to get products', error.message);
     }
   }
 
-  async getByBrand(brandSlug: string): Promise<Product[] | null> {
+  async getByBrand(brandSlug: string, searchParams?: any): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           brand: {
@@ -158,18 +195,38 @@ export class ProductService implements IProductService {
           subcategory: true,
           brand: true,
         },
+        skip,
+        take,
       });
 
-      if (!products) throw new NotFoundException('Error getting products');
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          brand: {
+            slug: brandSlug,
+          },
+        },
+      });
 
-      return products;
+      if (!products || products.length === 0) throw new NotFoundException('Error getting products');
+
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getByCategory(categorySlug: string): Promise<Product[] | null> {
+  async getByCategory(
+    categorySlug: string,
+    searchParams?: any,
+  ): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           category: {
@@ -181,18 +238,38 @@ export class ProductService implements IProductService {
           subcategory: true,
           brand: true,
         },
+        skip,
+        take,
+      });
+
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          category: {
+            slug: categorySlug,
+          },
+        },
       });
 
       if (!products) throw new NotFoundException('Error getting products');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getBySubcategory(subcategorySlug: string): Promise<Product[] | null> {
+  async getBySubcategory(
+    subcategorySlug: string,
+    searchParams?: any,
+  ): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           subcategory: {
@@ -204,11 +281,26 @@ export class ProductService implements IProductService {
           subcategory: true,
           brand: true,
         },
+        skip,
+        take,
+      });
+
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          subcategory: {
+            slug: subcategorySlug,
+          },
+        },
       });
 
       if (!products) throw new NotFoundException('Error getting products');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -397,6 +489,20 @@ export class ProductService implements IProductService {
     }
 
     return filters;
+  }
+
+  getPagination(searchParams?: any) {
+    const page: number = searchParams?.page
+      ? Number(searchParams.page)
+      : searchParams?.currentPage
+        ? Number(searchParams.currentPage)
+        : 1;
+    const pageSize: number = searchParams?.pageSize ? Number(searchParams.pageSize) : 10;
+
+    const skip: number = (page - 1) * pageSize;
+    const take: number = pageSize;
+
+    return { skip, take, page, pageSize };
   }
 
   async delete(id: number): Promise<Product | null> {
