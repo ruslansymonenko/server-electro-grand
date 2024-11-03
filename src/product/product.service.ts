@@ -65,6 +65,20 @@ export class ProductService implements IProductService {
           subcategoryId: dto.subcategoryId,
           brandId: dto.brandId ? dto.brandId : null,
         },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!product) throw new InternalServerErrorException('Error creating product');
@@ -287,6 +301,21 @@ export class ProductService implements IProductService {
 
       const updateData: Prisma.ProductUpdateInput = {};
 
+      if (dto.categoryId && !dto.subcategoryId) {
+        throw new BadRequestException('With changing category, subcategory should be changed also');
+      }
+
+      if (dto.categoryId && dto.subcategoryId) {
+        const isSubcategoryInCategory: boolean =
+          await this.subcategoryService.checkSubcategoryInCategory(
+            dto.subcategoryId,
+            dto.categoryId,
+          );
+
+        if (!isSubcategoryInCategory)
+          throw new BadRequestException('Subcategory is not linked' + ' with category');
+      }
+
       if (dto.name !== undefined) {
         updateData.name = dto.name;
         updateData.slug = createSlug(dto.name);
@@ -323,6 +352,20 @@ export class ProductService implements IProductService {
           id: id,
         },
         data: updateData,
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!updatedProduct)

@@ -31,6 +31,9 @@ export class CategoryService implements ICategoryService {
           name: dto.name,
           slug: categorySlug,
         },
+        include: {
+          subcategories: true,
+        },
       });
 
       if (!category) throw new InternalServerErrorException('Error creating category');
@@ -154,6 +157,9 @@ export class CategoryService implements ICategoryService {
           id: id,
         },
         data: updateData,
+        include: {
+          subcategories: true,
+        },
       });
 
       if (!updatedCategory) throw new InternalServerErrorException('Error while updating category');

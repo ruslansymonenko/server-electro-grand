@@ -19,6 +19,7 @@ interface ISubcategoryService {
   getBySlug(slug: string): Promise<Subcategory | null>;
   update(id: number, dto: UpdateSubcategoryDto): Promise<Subcategory | null>;
   delete(id: number): Promise<Subcategory | null>;
+  checkSubcategoryInCategory(subcategoryId: number, categoryId: number): Promise<boolean>;
 }
 
 @Injectable()
@@ -193,5 +194,16 @@ export class SubcategoryService implements ISubcategoryService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to delete subcategory', error.message);
     }
+  }
+
+  async checkSubcategoryInCategory(subcategoryId: number, categoryId: number): Promise<boolean> {
+    const isSubcategoryInCategory = await this.prisma.subcategory.findFirst({
+      where: {
+        id: subcategoryId,
+        categoryId: categoryId,
+      },
+    });
+
+    return !!isSubcategoryInCategory;
   }
 }
