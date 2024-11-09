@@ -160,6 +160,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
         },
         skip,
         take,
@@ -194,6 +195,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
         },
         skip,
         take,
@@ -237,6 +239,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
         },
         skip,
         take,
@@ -280,6 +283,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
         },
         skip,
         take,
@@ -316,6 +320,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
           productAttribute: {
             include: {
               attributeValue: {
@@ -363,6 +368,7 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
           productAttribute: {
             include: {
               attributeValue: {
