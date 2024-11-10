@@ -20,14 +20,23 @@ export class UserDto {
 }
 
 export class UpdateUserDto {
+  @IsOptional()
   @IsString({
     message: 'Email is required',
   })
   @IsEmail()
   email: string;
 
+  @IsOptional()
   @IsString({
     message: 'Name is required',
   })
   name: string;
+
+  @IsOptional()
+  @IsString({
+    message: 'Password is required',
+  })
+  @MinLength(6, { message: 'Password should be at least 6 characters' })
+  password: string;
 }

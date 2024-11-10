@@ -4,14 +4,14 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { EnumUserRoles, User } from '@prisma/client';
+import { EnumUserRoles, Prisma, User } from '@prisma/client';
 import { UserDto } from './dto/user.dto';
 import { hash } from 'argon2';
 import { PrismaService } from '../prisma.service';
 import { UpdateUserDto } from './dto/user.dto';
 
 interface IUserService {
-  create(dto: UserDto): Promise<User | null>;
+  create(dto: UserDto): Promise<IUserReturnInfo | null>;
   createAdmin(dto: UserDto): Promise<User | null>;
   findById(userID: number): Promise<User | null>;
   findByEmail(userEmail: string): Promise<User | null>;
@@ -31,7 +31,7 @@ export class UserService implements IUserService {
 
   async create(dto: UserDto): Promise<User | null> {
     try {
-      const isUser = await this.prisma.user.findUnique({
+      const isUser: User = await this.prisma.user.findUnique({
         where: {
           email: dto.email,
         },
@@ -39,18 +39,27 @@ export class UserService implements IUserService {
 
       if (isUser) throw new BadRequestException('User already exists');
 
-      const user = await this.prisma.user.create({
+      const user: User = await this.prisma.user.create({
         data: {
           email: dto.email,
           password: await hash(dto.password),
         },
       });
 
-      if (!user) return null;
+      if (!user) throw new InternalServerErrorException('Failed to create user');
 
-      return user;
+      const updatedUser: User = await this.prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          name: `Customer #${user.id}`,
+        },
+      });
+
+      return updatedUser;
     } catch (error) {
-      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+      throw new InternalServerErrorException('Failed to create user');
     }
   }
 
@@ -76,7 +85,7 @@ export class UserService implements IUserService {
 
       return user;
     } catch (error) {
-      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+      throw new InternalServerErrorException('Failed to create user', error.message);
     }
   }
 
@@ -84,25 +93,34 @@ export class UserService implements IUserService {
     try {
       const isUser = await this.findById(userId);
 
-      if (isUser) {
-        const updatedUser = await this.prisma.user.update({
-          where: {
-            id: userId,
-          },
-          data: {
-            email: dto.email,
-            name: dto.name,
-          },
-        });
+      if (!isUser) throw new NotFoundException('User was not found');
 
-        if (!updatedUser) throw new NotFoundException('Server error');
+      const updateData: Prisma.UserUpdateInput = {};
 
-        return this.returnUserFields(updatedUser);
+      if (dto.name !== undefined) {
+        updateData.name = dto.name;
       }
 
-      return null;
+      if (dto.email !== undefined) {
+        updateData.email = dto.email;
+      }
+
+      if (dto.password !== undefined) {
+        updateData.password = await hash(dto.password);
+      }
+
+      const updatedItem: User = await this.prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: updateData,
+      });
+
+      if (!updatedItem) throw new InternalServerErrorException('Error while updating');
+
+      return this.returnUserFields(updatedItem);
     } catch (error) {
-      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+      throw new InternalServerErrorException('Failed to update user', error.message);
     }
   }
 
@@ -118,7 +136,7 @@ export class UserService implements IUserService {
 
       return user;
     } catch (error) {
-      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+      throw new InternalServerErrorException('Failed to find user', error.message);
     }
   }
 
@@ -134,7 +152,7 @@ export class UserService implements IUserService {
 
       return user;
     } catch (error) {
-      throw new InternalServerErrorException('Failed to create WorkoutType', error.message);
+      throw new InternalServerErrorException('Failed to find user', error.message);
     }
   }
 

@@ -12,22 +12,24 @@ import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 import { BrandService } from '../brand/brand.service';
+import { IReviewResponse } from '../review/review.types';
 
 interface IProductService {
   create(dto: ProductDto): Promise<Product | null>;
   setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
   getAll(searchParams?: any): Promise<IProductServiceResponse | null>;
-  getById(id: number): Promise<Product | null>;
+  getById(id: number): Promise<IProductDataResponse | null>;
   getByBrand(brandSlug: string): Promise<IProductServiceResponse | null>;
   getByCategory(categorySlug: string): Promise<IProductServiceResponse | null>;
   getBySubcategory(subcategorySlug: string): Promise<IProductServiceResponse | null>;
-  getBySlug(slug: string): Promise<Product | null>;
+  getBySlug(slug: string): Promise<IProductDataResponse | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
 }
 
-export interface IProductWithSimilar extends Product {
+export interface IProductDataResponse extends Product {
   similarProducts: Product[];
+  reviews: IReviewResponse[];
 }
 
 export interface IProductServiceResponse {
@@ -310,7 +312,7 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getById(id: number): Promise<IProductWithSimilar | null> {
+  async getById(id: number): Promise<IProductDataResponse | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -320,7 +322,11 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
-          reviews: true,
+          reviews: {
+            include: {
+              user: true,
+            },
+          },
           productAttribute: {
             include: {
               attributeValue: {
@@ -335,9 +341,27 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      const similarProducts = await this.getSimilarProducts(product.subcategoryId, product.id);
+      const similarProducts: Product[] = await this.getSimilarProducts(
+        product.subcategoryId,
+        product.id,
+      );
+      const transformedReviews: IReviewResponse[] = product.reviews.map((review) => {
+        const { user, ...reviewDetails } = review;
 
-      return { ...product, similarProducts };
+        return {
+          review: reviewDetails,
+          user: {
+            id: user.id,
+            name: user.name,
+          },
+        };
+      });
+
+      return {
+        ...product,
+        reviews: transformedReviews,
+        similarProducts,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -358,7 +382,7 @@ export class ProductService implements IProductService {
     return products;
   }
 
-  async getBySlug(slug: string): Promise<IProductWithSimilar | null> {
+  async getBySlug(slug: string): Promise<IProductDataResponse | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -368,7 +392,11 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
-          reviews: true,
+          reviews: {
+            include: {
+              user: true,
+            },
+          },
           productAttribute: {
             include: {
               attributeValue: {
@@ -383,9 +411,27 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      const similarProducts = await this.getSimilarProducts(product.subcategoryId, product.id);
+      const similarProducts: Product[] = await this.getSimilarProducts(
+        product.subcategoryId,
+        product.id,
+      );
+      const transformedReviews: IReviewResponse[] = product.reviews.map((review) => {
+        const { user, ...reviewDetails } = review;
 
-      return { ...product, similarProducts };
+        return {
+          review: reviewDetails,
+          user: {
+            id: user.id,
+            name: user.name,
+          },
+        };
+      });
+
+      return {
+        ...product,
+        reviews: transformedReviews,
+        similarProducts,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
