@@ -7,23 +7,36 @@ import {
 import { PrismaService } from '../prisma.service';
 import { CategoryService } from '../category/category.service';
 import { SubcategoryService } from '../subcategory/subcategory.service';
-import { Prisma, Product, Subcategory } from '@prisma/client';
+import { Prisma, Product } from '@prisma/client';
 import { ProductDto, UpdateProductDto } from './dto/product.dto';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 import { BrandService } from '../brand/brand.service';
+import { IReviewResponse } from '../review/review.types';
 
 interface IProductService {
   create(dto: ProductDto): Promise<Product | null>;
   setProductImages(id: number, images: Express.Multer.File[]): Promise<Product | null>;
-  getAll(searchParams?: any): Promise<Product[] | null>;
-  getById(id: number): Promise<Product | null>;
-  getByBrand(brandSlug: string): Promise<Product[] | null>;
-  getByCategory(categorySlug: string): Promise<Product[] | null>;
-  getBySubcategory(subcategorySlug: string): Promise<Product[] | null>;
-  getBySlug(slug: string): Promise<Product | null>;
+  getAll(searchParams?: any): Promise<IProductServiceResponse | null>;
+  getById(id: number): Promise<IProductDataResponse | null>;
+  getByBrand(brandSlug: string): Promise<IProductServiceResponse | null>;
+  getByCategory(categorySlug: string): Promise<IProductServiceResponse | null>;
+  getBySubcategory(subcategorySlug: string): Promise<IProductServiceResponse | null>;
+  getBySlug(slug: string): Promise<IProductDataResponse | null>;
   update(id: number, dto: UpdateProductDto): Promise<Product | null>;
   delete(id: number): Promise<Product | null>;
+}
+
+export interface IProductDataResponse extends Product {
+  similarProducts: Product[];
+  reviews: IReviewResponse[];
+}
+
+export interface IProductServiceResponse {
+  products: Product[];
+  totalProducts: number;
+  totalPages: number;
+  currentPage: number;
 }
 
 @Injectable()
@@ -49,6 +62,17 @@ export class ProductService implements IProductService {
         if (!isBrand) throw new BadRequestException('BrandId not found');
       }
 
+      if (dto.categoryId && dto.subcategoryId) {
+        const isSubcategoryInCategory: boolean =
+          await this.subcategoryService.checkSubcategoryInCategory(
+            dto.subcategoryId,
+            dto.categoryId,
+          );
+
+        if (!isSubcategoryInCategory)
+          throw new BadRequestException('Subcategory is not linked' + ' with category');
+      }
+
       const productSlug: string = createSlug(dto.name);
 
       const product = await this.prisma.product.create({
@@ -60,6 +84,20 @@ export class ProductService implements IProductService {
           categoryId: dto.categoryId,
           subcategoryId: dto.subcategoryId,
           brandId: dto.brandId ? dto.brandId : null,
+        },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
         },
       });
 
@@ -96,6 +134,11 @@ export class ProductService implements IProductService {
         data: {
           images: imagesPaths,
         },
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+        },
       });
 
       if (!updatedProduct) throw new InternalServerErrorException('Error updating product images');
@@ -106,26 +149,44 @@ export class ProductService implements IProductService {
     }
   }
 
-  async getAll(searchParams?: any): Promise<Product[] | null> {
+  async getAll(searchParams?: any): Promise<IProductServiceResponse | null> {
+    console.log(searchParams);
     try {
+      const filters = this.getFiltersObject(searchParams);
+
+      const { skip, take, page, pageSize } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
+        where: filters,
         include: {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
         },
+        skip,
+        take,
       });
+
+      const totalProducts: number = await this.prisma.product.count({ where: filters });
 
       if (!products) throw new InternalServerErrorException('Products was not found');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / pageSize),
+        currentPage: page,
+      };
     } catch (error) {
       throw new InternalServerErrorException('Failed to get products', error.message);
     }
   }
 
-  async getByBrand(brandSlug: string): Promise<Product[] | null> {
+  async getByBrand(brandSlug: string, searchParams?: any): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           brand: {
@@ -136,19 +197,40 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
+        },
+        skip,
+        take,
+      });
+
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          brand: {
+            slug: brandSlug,
+          },
         },
       });
 
-      if (!products) throw new NotFoundException('Error getting products');
+      if (!products || products.length === 0) throw new NotFoundException('Error getting products');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getByCategory(categorySlug: string): Promise<Product[] | null> {
+  async getByCategory(
+    categorySlug: string,
+    searchParams?: any,
+  ): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           category: {
@@ -159,19 +241,40 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
+        },
+        skip,
+        take,
+      });
+
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          category: {
+            slug: categorySlug,
+          },
         },
       });
 
       if (!products) throw new NotFoundException('Error getting products');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getBySubcategory(subcategorySlug: string): Promise<Product[] | null> {
+  async getBySubcategory(
+    subcategorySlug: string,
+    searchParams?: any,
+  ): Promise<IProductServiceResponse | null> {
     try {
+      const { skip, take } = this.getPagination(searchParams);
+
       const products = await this.prisma.product.findMany({
         where: {
           subcategory: {
@@ -182,18 +285,34 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: true,
+        },
+        skip,
+        take,
+      });
+
+      const totalProducts = await this.prisma.product.count({
+        where: {
+          subcategory: {
+            slug: subcategorySlug,
+          },
         },
       });
 
       if (!products) throw new NotFoundException('Error getting products');
 
-      return products;
+      return {
+        products,
+        totalProducts,
+        totalPages: Math.ceil(totalProducts / take),
+        currentPage: searchParams?.page ? Number(searchParams.page) : 1,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getById(id: number): Promise<Product | null> {
+  async getById(id: number): Promise<IProductDataResponse | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -203,6 +322,11 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: {
+            include: {
+              user: true,
+            },
+          },
           productAttribute: {
             include: {
               attributeValue: {
@@ -217,13 +341,48 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      return product;
+      const similarProducts: Product[] = await this.getSimilarProducts(
+        product.subcategoryId,
+        product.id,
+      );
+      const transformedReviews: IReviewResponse[] = product.reviews.map((review) => {
+        const { user, ...reviewDetails } = review;
+
+        return {
+          review: reviewDetails,
+          user: {
+            id: user.id,
+            name: user.name,
+          },
+        };
+      });
+
+      return {
+        ...product,
+        reviews: transformedReviews,
+        similarProducts,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
   }
 
-  async getBySlug(slug: string): Promise<Product | null> {
+  async getSimilarProducts(subcategoryId: number, excludeProductId: number): Promise<Product[]> {
+    const products = await this.prisma.product.findMany({
+      where: {
+        subcategoryId,
+        id: { not: excludeProductId },
+      },
+      take: 3,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return products;
+  }
+
+  async getBySlug(slug: string): Promise<IProductDataResponse | null> {
     try {
       const product = await this.prisma.product.findUnique({
         where: {
@@ -233,6 +392,11 @@ export class ProductService implements IProductService {
           category: true,
           subcategory: true,
           brand: true,
+          reviews: {
+            include: {
+              user: true,
+            },
+          },
           productAttribute: {
             include: {
               attributeValue: {
@@ -247,7 +411,27 @@ export class ProductService implements IProductService {
 
       if (!product) throw new NotFoundException('Error getting product');
 
-      return product;
+      const similarProducts: Product[] = await this.getSimilarProducts(
+        product.subcategoryId,
+        product.id,
+      );
+      const transformedReviews: IReviewResponse[] = product.reviews.map((review) => {
+        const { user, ...reviewDetails } = review;
+
+        return {
+          review: reviewDetails,
+          user: {
+            id: user.id,
+            name: user.name,
+          },
+        };
+      });
+
+      return {
+        ...product,
+        reviews: transformedReviews,
+        similarProducts,
+      };
     } catch (error) {
       throw new InternalServerErrorException(error);
     }
@@ -260,6 +444,21 @@ export class ProductService implements IProductService {
       if (!isProduct) throw new BadRequestException('Product not found');
 
       const updateData: Prisma.ProductUpdateInput = {};
+
+      if (dto.categoryId && !dto.subcategoryId) {
+        throw new BadRequestException('With changing category, subcategory should be changed also');
+      }
+
+      if (dto.categoryId && dto.subcategoryId) {
+        const isSubcategoryInCategory: boolean =
+          await this.subcategoryService.checkSubcategoryInCategory(
+            dto.subcategoryId,
+            dto.categoryId,
+          );
+
+        if (!isSubcategoryInCategory)
+          throw new BadRequestException('Subcategory is not linked' + ' with category');
+      }
 
       if (dto.name !== undefined) {
         updateData.name = dto.name;
@@ -297,6 +496,20 @@ export class ProductService implements IProductService {
           id: id,
         },
         data: updateData,
+        include: {
+          category: true,
+          subcategory: true,
+          brand: true,
+          productAttribute: {
+            include: {
+              attributeValue: {
+                include: {
+                  attribute: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!updatedProduct)
@@ -306,6 +519,42 @@ export class ProductService implements IProductService {
     } catch (error) {
       throw new InternalServerErrorException(`Failed to update product: ${error}`);
     }
+  }
+
+  getFiltersObject(searchParams: any) {
+    const filters: any = {};
+
+    if (searchParams.minPrice) {
+      filters.price = { gte: Number(searchParams.minPrice) };
+    }
+    if (searchParams.maxPrice) {
+      filters.price = { ...filters.price, lte: Number(searchParams.maxPrice) };
+    }
+    if (searchParams.category) {
+      filters.category = { name: searchParams.category };
+    }
+    if (searchParams.subcategory) {
+      filters.subcategory = { name: searchParams.subcategory };
+    }
+    if (searchParams.brand) {
+      filters.brand = { name: searchParams.brand };
+    }
+
+    return filters;
+  }
+
+  getPagination(searchParams?: any) {
+    const page: number = searchParams?.page
+      ? Number(searchParams.page)
+      : searchParams?.currentPage
+        ? Number(searchParams.currentPage)
+        : 1;
+    const pageSize: number = searchParams?.pageSize ? Number(searchParams.pageSize) : 10;
+
+    const skip: number = (page - 1) * pageSize;
+    const take: number = pageSize;
+
+    return { skip, take, page, pageSize };
   }
 
   async delete(id: number): Promise<Product | null> {
