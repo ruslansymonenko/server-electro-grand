@@ -85,7 +85,7 @@ export class FilesService implements IFilesService {
   }
 
   getUploadPath(folder: EnumFoldersNames): string {
-    let folderPath = `${path}/public/uploads/${folder}`;
+    const folderPath = `${path}/public/uploads/${folder}`;
 
     return folderPath;
   }
