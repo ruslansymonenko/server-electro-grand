@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { MailerService } from './mailer.service';
-import { SendCallbackFormDto } from './dto/mailer.dto';
+import { SendCallbackFormDto, SendContactFormDto } from './dto/mailer.dto';
 
 @Controller('mailer')
 export class MailerController {
@@ -9,7 +9,14 @@ export class MailerController {
   @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('/callback-form')
-  async create(@Body() dto: SendCallbackFormDto): Promise<void> {
+  async callback(@Body() dto: SendCallbackFormDto): Promise<void> {
     return this.mailerService.sendUserCallbackForm(dto);
+  }
+
+  @UsePipes(new ValidationPipe())
+  @HttpCode(200)
+  @Post('/contact-form')
+  async contact(@Body() dto: SendContactFormDto): Promise<void> {
+    return this.mailerService.sendUserContactForm(dto);
   }
 }

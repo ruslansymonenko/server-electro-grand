@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
-import { SendCallbackFormDto } from './dto/mailer.dto';
+import { SendCallbackFormDto, SendContactFormDto } from './dto/mailer.dto';
 
 @Injectable()
 export class MailerService {
@@ -29,6 +29,22 @@ export class MailerService {
         to: this.configService.get('STAFF_EMAIL'),
         subject: 'Користувач сайту просить передзвонити',
         text: `Користувач сайту Elektro Grand, просить передзвонити. Телефон: ${dto.phone}`,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('Помилка, спробуйте пізніше');
+    }
+  }
+
+  async sendUserContactForm(dto: SendContactFormDto): Promise<void> {
+    try {
+      const mailOptions = {
+        from: dto.email,
+        to: this.configService.get('STAFF_EMAIL'),
+        subject: dto.subject,
+        text: dto.message,
       };
 
       await this.transporter.sendMail(mailOptions);
