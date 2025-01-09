@@ -16,6 +16,7 @@ import { BrandModule } from './brand/brand.module';
 import { AttributeModule } from './attribute/attribute.module';
 import { AttributeValueModule } from './attribute-value/attribute-value.module';
 import { ProductAttributeModule } from './product-attribute/product-attribute.module';
+import { MailerModule } from './mailer/mailer.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ProductAttributeModule } from './product-attribute/product-attribute.mo
     AttributeModule,
     AttributeValueModule,
     ProductAttributeModule,
+    MailerModule,
   ],
   controllers: [],
   providers: [],
