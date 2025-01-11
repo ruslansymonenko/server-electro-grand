@@ -124,6 +124,20 @@ export class UserService implements IUserService {
     }
   }
 
+  async getAll(): Promise<IUserReturnInfo[] | null> {
+    try {
+      const users = await this.prisma.user.findMany();
+
+      const usersData = users.map((user) => {
+        return this.returnUserFields(user);
+      });
+
+      return usersData;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to find user', error.message);
+    }
+  }
+
   async findById(userId: number): Promise<User | null> {
     try {
       const user = await this.prisma.user.findUnique({
