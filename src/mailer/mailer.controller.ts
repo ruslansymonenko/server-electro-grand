@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  InternalServerErrorException,
+  Post,
+  UsePipes,
+  ValidationPipe,
+} from '@nestjs/common';
 import { MailerService } from './mailer.service';
 import { SendCallbackFormDto, SendContactFormDto } from './dto/mailer.dto';
 
@@ -9,14 +17,24 @@ export class MailerController {
   @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('/callback-form')
-  async callback(@Body() dto: SendCallbackFormDto): Promise<void> {
-    return this.mailerService.sendUserCallbackForm(dto);
+  async callback(@Body() dto: SendCallbackFormDto): Promise<boolean> {
+    try {
+      const success: boolean = await this.mailerService.sendUserCallbackForm(dto);
+      return success;
+    } catch (error) {
+      throw new InternalServerErrorException('Помилка при відправленні форми');
+    }
   }
 
   @UsePipes(new ValidationPipe())
   @HttpCode(200)
   @Post('/contact-form')
-  async contact(@Body() dto: SendContactFormDto): Promise<void> {
-    return this.mailerService.sendUserContactForm(dto);
+  async contact(@Body() dto: SendContactFormDto): Promise<boolean> {
+    try {
+      const success: boolean = await this.mailerService.sendUserContactForm(dto);
+      return success;
+    } catch (error) {
+      throw new InternalServerErrorException('Помилка при відправленні форми');
+    }
   }
 }
