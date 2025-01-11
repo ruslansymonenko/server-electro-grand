@@ -22,7 +22,7 @@ export class MailerService {
     });
   }
 
-  async sendUserCallbackForm(dto: SendCallbackFormDto): Promise<void> {
+  async sendUserCallbackForm(dto: SendCallbackFormDto): Promise<boolean> {
     try {
       const mailOptions = {
         from: 'Elektro Grand магазин',
@@ -31,14 +31,18 @@ export class MailerService {
         text: `Користувач сайту Elektro Grand, просить передзвонити. Телефон: ${dto.phone}`,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      console.log(mailOptions);
+
+      const result = await this.transporter.sendMail(mailOptions);
+
+      return result.accepted.length > 0;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('Помилка, спробуйте пізніше');
     }
   }
 
-  async sendUserContactForm(dto: SendContactFormDto): Promise<void> {
+  async sendUserContactForm(dto: SendContactFormDto): Promise<boolean> {
     try {
       const mailOptions = {
         from: dto.email,
@@ -47,7 +51,11 @@ export class MailerService {
         text: dto.message,
       };
 
-      await this.transporter.sendMail(mailOptions);
+      console.log(mailOptions);
+
+      const result = await this.transporter.sendMail(mailOptions);
+
+      return result.accepted.length > 0;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException('Помилка, спробуйте пізніше');
