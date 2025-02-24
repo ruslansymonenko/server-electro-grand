@@ -14,5 +14,4 @@ RUN npm run build
 
 EXPOSE 3001
 
-# Запускаем приложение
 CMD ["npm", "run", "start:prod"]
