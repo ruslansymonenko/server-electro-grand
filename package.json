@@ -18,8 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seeder:all": "ts-node seeder/seeder.ts",
-    "seeder:products": "ts-node seeder/seed-products.ts"
+    "seeder:all": "ts-node src/seeder/seeder.ts",
+    "seeder:products": "ts-node src/seeder/seed-products.ts"
   },
   "dependencies": {
     "@faker-js/faker": "^9.0.3",
