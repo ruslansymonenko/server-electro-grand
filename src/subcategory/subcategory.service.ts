@@ -44,6 +44,9 @@ export class SubcategoryService implements ISubcategoryService {
           slug: subcategorySlug,
           categoryId: dto.categoryId,
         },
+        include: {
+          category: true,
+        },
       });
 
       if (!subcategory) throw new InternalServerErrorException('Error creating subcategory');
@@ -93,7 +96,11 @@ export class SubcategoryService implements ISubcategoryService {
 
   async getAll(searchParams?: any): Promise<Subcategory[] | null> {
     try {
-      const subcategories = await this.prisma.subcategory.findMany({});
+      const subcategories = await this.prisma.subcategory.findMany({
+        include: {
+          category: true,
+        },
+      });
 
       if (!subcategories) throw new InternalServerErrorException('Subcategories was not found');
 
@@ -108,6 +115,9 @@ export class SubcategoryService implements ISubcategoryService {
       const subcategory = await this.prisma.subcategory.findUnique({
         where: {
           id: id,
+        },
+        include: {
+          category: true,
         },
       });
 
@@ -124,6 +134,9 @@ export class SubcategoryService implements ISubcategoryService {
       const subcategory = await this.prisma.subcategory.findUnique({
         where: {
           slug: slug,
+        },
+        include: {
+          category: true,
         },
       });
 
