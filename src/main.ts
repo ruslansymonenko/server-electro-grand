@@ -10,7 +10,7 @@ async function bootstrap() {
   const PORT: number = process.env.PORT ? parseInt(process.env.PORT) : 4200;
   const publicPath: string = join(process.cwd(), 'public');
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('backend');
   app.enableCors({
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
