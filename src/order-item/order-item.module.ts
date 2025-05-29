@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { OrderItemService } from './order-item.service';
 import { OrderItemController } from './order-item.controller';
-import { PrismaService } from '../prisma.service';
 import { ProductService } from '../product/product.service';
 import { OrderService } from '../order/order.service';
 import { CategoryService } from '../category/category.service';
@@ -16,7 +15,6 @@ import { OrderModule } from '../order/order.module';
   controllers: [OrderItemController],
   providers: [
     OrderItemService,
-    PrismaService,
     ProductService,
     OrderService,
     CategoryService,

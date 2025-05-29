@@ -7,7 +7,7 @@ import {
 import { EnumUserRoles, Prisma, User } from '@prisma/client';
 import { UserDto } from './dto/user.dto';
 import { hash } from 'argon2';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { UpdateUserDto } from './dto/user.dto';
 
 interface IUserService {

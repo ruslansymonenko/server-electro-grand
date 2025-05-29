@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { SubcategoryDto, UpdateSubcategoryDto } from '../subcategory/dto/subcategory.dto';
 import { EnumPaymentStatus, Payment, Prisma, Subcategory } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { OrderService } from '../order/order.service';
 import { UserService } from '../user/user.service';
 import { PaymentDto, UpdatePaymentDto } from './dto/payment.dto';

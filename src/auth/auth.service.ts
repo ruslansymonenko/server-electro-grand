@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { AuthAdminDto, AuthDto } from './dto/auth.dto';
 import { Response } from 'express';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ITokens } from '../types/auth.types';
 import { IUserReturnInfo, UserService } from '../user/user.service';

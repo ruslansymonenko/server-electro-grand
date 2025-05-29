@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Attribute, Prisma } from '@prisma/client';
 import { AttributeDto, UpdateAttributeDto } from './dto/attribute.dto';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 
 interface IAttributeService {
   create(dto: AttributeDto): Promise<Attribute | null>;
