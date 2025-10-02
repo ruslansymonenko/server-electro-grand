@@ -1,2 +1,2 @@
-# Elektro Grand Server
+# Electro Grand Server
 
