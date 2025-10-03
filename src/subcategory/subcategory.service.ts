@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { Category, Prisma, Subcategory } from '@prisma/client';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { SubcategoryDto, UpdateSubcategoryDto } from './dto/subcategory.dto';

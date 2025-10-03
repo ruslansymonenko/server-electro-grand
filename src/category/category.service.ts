@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import { Category, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { createSlug } from '../utils/create-slug/create-slug';
 import { EnumFoldersNames, FilesService, IFileResponse } from '../files/files.service';
 

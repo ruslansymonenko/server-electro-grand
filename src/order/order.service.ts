@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EnumOrderStatus, Order, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { UserService } from '../user/user.service';
 import { OrderDto, UpdateOrderDto } from './dto/order.dto';
 import { ProductService } from '../product/product.service';

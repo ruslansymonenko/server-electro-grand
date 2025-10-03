@@ -17,6 +17,7 @@ import { AttributeModule } from './attribute/attribute.module';
 import { AttributeValueModule } from './attribute-value/attribute-value.module';
 import { ProductAttributeModule } from './product-attribute/product-attribute.module';
 import { MailerModule } from './mailer/mailer.module';
+import { PrismaModule } from './database/prisma.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MailerModule } from './mailer/mailer.module';
       baseURL: CLIENT_URL,
       withCredentials: true,
     }),
+    PrismaModule,
     AuthModule,
     UserModule,
     ProductModule,

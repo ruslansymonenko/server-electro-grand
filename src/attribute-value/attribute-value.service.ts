@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AttributeValue, Prisma } from '@prisma/client';
 import { AttributeValueDto, UpdateAttributeValueDto } from './dto/attribute-value.dto';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../database/prisma.service';
 import { AttributeService } from '../attribute/attribute.service';
 
 interface IAttributeValueService {

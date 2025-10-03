@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ProductAttributeService } from './product-attribute.service';
 import { ProductAttributeController } from './product-attribute.controller';
-import { PrismaService } from '../prisma.service';
 import { ProductService } from '../product/product.service';
 import { AttributeValueService } from '../attribute-value/attribute-value.service';
 import { CategoryService } from '../category/category.service';
@@ -14,7 +13,6 @@ import { AttributeService } from '../attribute/attribute.service';
   controllers: [ProductAttributeController],
   providers: [
     ProductAttributeService,
-    PrismaService,
     ProductService,
     AttributeValueService,
     CategoryService,
